@@ -86,6 +86,12 @@ def _atomic_write(path: Path, text: str) -> None:
     try:
         with os.fdopen(fd, "w") as f:
             f.write(text)
+        # mkstemp creates 0600 and os.replace keeps it, which makes the snapshot
+        # unreadable to anything not running as the writing user. The dashboard
+        # is a separate container running as nobody, and this file exists for it
+        # to read: it carries status and equity, never a credential. Without this
+        # the desk reports every healthy bot as "absent".
+        os.chmod(tmp, 0o644)
         os.replace(tmp, path)
     except Exception:
         Path(tmp).unlink(missing_ok=True)
