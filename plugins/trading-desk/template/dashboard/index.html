@@ -434,7 +434,17 @@ function connect(){
   const es = new EventSource("/api/stream");
   es.addEventListener("open", () => setConn(true, "live"));
   es.addEventListener("state", m => { try { renderCards(JSON.parse(m.data)); } catch {} });
-  es.addEventListener("event", m => { try { addEvent(JSON.parse(m.data)); } catch {} });
+  // The server only ever emits two frame kinds: "state" and "events". The latter
+  // is a BATCH, {events:[...], backlog:bool} -- the replayed tail on connect and
+  // then whatever is new each pass. Listening for a singular "event" means the
+  // feed never receives anything at all, which is why this panel sat empty.
+  // Iterating oldest-first while prepending leaves the newest row on top.
+  es.addEventListener("events", m => {
+    try {
+      const d = JSON.parse(m.data);
+      (d.events || []).forEach(ev => addEvent(ev, true));
+    } catch {}
+  });
   es.addEventListener("error", () => setConn(false, "reconnecting"));
 }
 
