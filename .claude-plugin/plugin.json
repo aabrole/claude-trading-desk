@@ -1,0 +1,22 @@
+{
+  "name": "trading-desk",
+  "displayName": "Trading Desk",
+  "version": "1.0.0",
+  "description": "Build, honestly backtest, paper trade and self-host algorithmic trading bots with Claude Code. Includes a three-arm testing discipline that can tell you a strategy does not work, a stdlib live dashboard, and scripted deployment to a free 24/7 VM.",
+  "author": {
+    "name": "aabrole",
+    "url": "https://github.com/aabrole"
+  },
+  "homepage": "https://github.com/aabrole/claude-trading-desk",
+  "repository": "https://github.com/aabrole/claude-trading-desk",
+  "license": "MIT",
+  "keywords": [
+    "trading",
+    "backtesting",
+    "algorithmic-trading",
+    "paper-trading",
+    "alpaca",
+    "quant",
+    "dashboard"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "One entry per bot. key MUST match the name your bot passes to BotState(bot=...),",
+    "because that is what names its files in the state directory.",
+    "fills: 'broker' when a broker reports the fill, 'simulated' when the bot books its own.",
+    "jev_mode: 'gating' (the model can veto a trade), 'monitor' (score recorded only), 'none'.",
+    "Say which it is. A card that hides simulated fills is not reporting, it is advertising."
+  ],
+  "bots": [
+    {
+      "key": "orb",
+      "agent": "1",
+      "label": "ORB breakout",
+      "strategy": "Opening range breakout on 8 US stocks, every candidate scored by Jev.",
+      "broker": "Alpaca paper",
+      "jev_mode": "gating",
+      "fills": "broker",
+      "accent": "#4a9eca"
+    }
+  ]
+}

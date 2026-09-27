@@ -1,0 +1,20 @@
+{
+  "_comment": [
+    "Where each bot's backtested equity curve comes from. Paths are relative to dashboard/.",
+    "Each csv needs a date-like first column and an 'equity' column.",
+    "The hero line's return is the percentage the card counts up to.",
+    "A second, non-hero line is how you show a filter's contribution honestly: same",
+    "signals and same period, one filtered and one not.",
+    "Put a 'caveat' on any result that does not generalise. It prints on the card itself."
+  ],
+  "bots": {
+    "orb": {
+      "trades": null,
+      "note": "Same breakouts in both lines. The lower one takes every signal; the upper one takes only those the filter approved.",
+      "lines": [
+        {"name": "filtered", "hero": true, "csv": "../orb/out/equity_gated.csv"},
+        {"name": "every breakout", "hero": false, "csv": "../orb/out/equity_rules.csv"}
+      ]
+    }
+  }
+}

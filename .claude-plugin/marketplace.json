@@ -1,0 +1,16 @@
+{
+  "name": "trading-desk",
+  "version": "1.0.0",
+  "owner": {
+    "name": "aabrole",
+    "url": "https://github.com/aabrole"
+  },
+  "plugins": [
+    {
+      "name": "trading-desk",
+      "version": "1.0.0",
+      "description": "Build, honestly backtest, paper trade and self-host algorithmic trading bots with Claude Code, with a free live dashboard and free 24/7 hosting.",
+      "source": "./"
+    }
+  ]
+}

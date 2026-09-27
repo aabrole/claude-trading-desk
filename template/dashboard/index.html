@@ -1,0 +1,449 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bot leaderboard</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f6f6f4;color:#15161a;
+ font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+ -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 70px}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+h1{font-size:30px;margin:0;letter-spacing:-.6px}
+h2{font-size:18px;margin:34px 0 13px;padding-bottom:6px;border-bottom:2px solid #15161a}
+.sub{font-size:12px;color:#8a8f96}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.live .dot{background:#2f855a;box-shadow:0 0 0 3px rgba(47,133,90,.18)}
+.dead .dot{background:#c0392b}
+.conn{font-size:12px;font-weight:600;padding:5px 11px;border:1px solid #e4e4e0;border-radius:20px;background:#fff}
+.conn.remote{margin-left:7px}
+.conn.remote.up{border-color:#bfe0cd;background:#f2fbf6;color:#2f6f4f}
+.conn.remote.up .dot{background:#2f855a;box-shadow:0 0 0 3px rgba(47,133,90,.18)}
+.conn.remote.down{border-color:#f0cfcb;background:#fdf4f3;color:#a03328}
+.conn.remote.down .dot{background:#c0392b}
+.conn.remote .sub2{font-weight:500;opacity:.75;margin-left:5px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;align-items:stretch}
+.cardwrap{display:flex;min-width:0}
+@media (max-width:820px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{flex:1 1 auto;min-width:0;background:#fff;border:1px solid #e4e4e0;border-radius:11px;padding:17px;position:relative}
+.card.off{opacity:.55;background:#fafaf8}
+.card.lead{border:2px solid #2f855a;box-shadow:0 2px 16px rgba(47,133,90,.13)}
+.rank{position:absolute;top:13px;right:15px;font-size:11px;font-weight:700;color:#8a8f96;letter-spacing:.7px}
+.cname{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.cagent{font-size:11px;color:#8a8f96;text-transform:uppercase;letter-spacing:.7px}
+.cstrat{font-size:11.5px;color:#6b6f76;margin:7px 0 2px;min-height:34px;line-height:1.45}
+.big{font-size:34px;font-weight:700;letter-spacing:-1.3px;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.biglabel{font-size:11px;color:#8a8f96;text-transform:uppercase;letter-spacing:.5px}
+.row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-top:1px solid #f1f1ef;margin-top:2px}
+.row span{color:#7a7f86}.row b{font-variant-numeric:tabular-nums}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;background:#f0f0ee;color:#6b6f76;
+ text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.tag.gate{background:#e8f2f8;color:#2b6d92}
+.tag.monitor{background:#fdf6e3;color:#9a7420}
+.tag.sim{background:#f6eef8;color:#7b4a8c}
+.tag.bt{background:#eef1f4;color:#5a6472}
+.spark{display:block;width:100%;height:64px;margin:2px 0 4px}
+.btline{font-size:11px;color:#8a8f96;margin-bottom:2px}
+.btnote{font-size:11.5px;line-height:1.45;color:#6b7280;margin:6px 0 0;padding-top:7px;border-top:1px solid #ededea}
+.btcav{font-size:11.5px;line-height:1.45;color:#96591f;background:#fff8e6;border-left:3px solid #d4a13c;padding:6px 9px;border-radius:0 5px 5px 0;margin:6px 0 0}
+.btsecond{font-size:11px;color:#8a8f96;margin-top:1px}
+.tag.status{background:#eef6f0;color:#2f855a}
+.tag.status.off{background:#f0f0ee;color:#8a8f96}
+.pos{color:#2f855a}.neg{color:#c0392b}.dim{color:#9a9a9a}
+.panel{background:#fff;border:1px solid #e4e4e0;border-radius:11px;padding:16px}
+svg.chart{width:100%;height:auto;display:block}
+.ax{font-size:10.5px;fill:#6b6f76}
+.legend{font-size:12px;margin-bottom:6px}
+.key{margin-right:15px;white-space:nowrap}
+.key i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#feed{max-height:520px;overflow-y:auto;font-variant-numeric:tabular-nums}
+.ev{display:grid;grid-template-columns:62px 92px 74px 1fr;gap:10px;align-items:start;
+ padding:8px 2px;border-bottom:1px solid #f1f1ef;font-size:12.5px}
+.ev .t{color:#9a9a9a;font-size:11.5px}
+.ev .b{font-weight:700}
+.kind{font-size:10px;padding:2px 6px;border-radius:4px;background:#f0f0ee;color:#6b6f76;
+ text-transform:uppercase;letter-spacing:.5px;font-weight:600;justify-self:start}
+.kind.fill,.kind.order{background:#eef6f0;color:#2f855a}
+.kind.decision{background:#e8f2f8;color:#2b6d92}
+.kind.exit{background:#fdf1f0;color:#c0392b}
+.kind.error{background:#c0392b;color:#fff}
+.kind.candidate{background:#f7f7f5;color:#8a8f96}
+.probs{margin-top:5px}
+.pr{display:flex;align-items:center;gap:7px;font-size:11px;margin-bottom:2px;max-width:330px}
+.pr .pl{width:78px;color:#6b6f76}
+.pr .pb{flex:1;background:#eee;border-radius:3px;height:8px;overflow:hidden}
+.pr .pb i{display:block;height:100%}
+.pr .pv{width:32px;text-align:right;font-weight:700}
+.empty{color:#9a9a9a;font-size:13px;padding:18px 2px}
+.note{background:#fff8e6;border-left:3px solid #d4a13c;padding:11px 14px;border-radius:6px;
+ font-size:13px;margin:14px 0;line-height:1.5}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid #e4e4e0;font-size:11.5px;color:#8a8f96}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Bot leaderboard</h1>
+    <span class="conn dead" id="conn"><span class="dot"></span><span id="connText">connecting</span></span>
+    <span class="conn remote" id="remote" hidden><span class="dot"></span><span id="remoteText"></span></span>
+    <span class="sub" id="meta"></span>
+  </header>
+  <p class="sub" id="tagline">Four strategies, separate books, live paper trading.</p>
+
+  <div class="cards" id="cards"></div>
+
+  <h2>Equity</h2>
+  <div class="panel">
+    <div class="legend" id="legend"></div>
+    <svg class="chart" id="chart" viewBox="0 0 920 300"></svg>
+    <div class="sub" id="chartNote">Each bot started at $10,000 in its own account.</div>
+  </div>
+
+  <h2>Live decision stream</h2>
+  <div class="panel">
+    <div id="feed"><div class="empty">waiting for the first event…</div></div>
+    <div class="sub">Every candidate each bot looked at, not only the ones it traded. Bars are the
+      model's probability across its options.</div>
+  </div>
+
+  <div class="note" id="caveats"></div>
+
+  <footer>
+    Paper trading. Backtested and paper results are hypothetical and are not a prediction of live
+    performance. Nothing here is financial advice.
+  </footer>
+</div>
+
+<script>
+const MAX_EVENTS = 300;
+// The server owns the palette (it shares one with reports/viz_core.py), so the
+// page never hard-codes a bot colour: it reads the accent off each record and
+// remembers it for the feed and the chart, which arrive separately.
+const accent = {};
+let backtests = {};
+const anims = {};
+const cardSig = {};
+const colorOf = k => accent[k] || "#15161a";
+let history = {}, bots = [], seen = new Set();
+
+const money = v => v==null ? "—" : (v<0?"-":"")+"$"+Math.abs(v).toLocaleString(undefined,{maximumFractionDigits:0});
+const pct = v => v==null ? "—" : (v>=0?"+":"")+v.toFixed(2)+"%";
+const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clockOf = ts => { try { return new Date(ts).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}); } catch { return ""; } };
+
+function setConn(ok, text){
+  const el = document.getElementById("conn");
+  el.className = "conn " + (ok ? "live" : "dead");
+  document.getElementById("connText").textContent = text;
+}
+
+function renderCards(s){
+  bots = s.bots;
+  s.bots.forEach(b => { if (b.accent) accent[b.key] = b.accent; });
+  const rankOf = {};
+  s.leaderboard.forEach(b => { rankOf[b.key] = b.rank; if (b.accent) accent[b.key] = b.accent; });
+
+  const host = document.getElementById("cards");
+  const roster = s.bots.map(b => b.key).join(",");
+  if (host.dataset.roster !== roster){ host.innerHTML = ""; host.dataset.roster = roster; }
+
+  // A card is rebuilt only when its own markup changed. The state frame lands
+  // every two seconds, and a card waiting on Monday's open produces identical
+  // markup every time, so its backtest animation is never interrupted.
+  s.bots.forEach(b => {
+    const html = cardHTML(b, rankOf[b.key], s.leaderboard.length);
+    if (cardSig[b.key] === html) return;
+    cardSig[b.key] = html;
+    stopAnim(b.key);
+    const fresh = document.createElement("div");
+    fresh.className = "cardwrap";
+    fresh.dataset.bot = b.key;
+    fresh.innerHTML = html;
+    const old = host.querySelector('[data-bot="' + b.key + '"]');
+    if (old) host.replaceChild(fresh, old); else host.append(fresh);
+    if (b.status !== "running" && backtests[b.key]) animate(b.key);
+  });
+
+  document.getElementById("meta").textContent =
+    `${(s.totals||{}).bots_running ?? 0} of ${s.bots.length} running · updated ${clockOf(s.generated_at)}`;
+
+  const sims = s.bots.filter(b => b.fills === "simulated").map(b => b.label);
+  const mon  = s.bots.filter(b => b.jev_mode === "monitor").map(b => b.label);
+  const off  = s.bots.filter(b => b.status !== "running").map(b => b.label);
+  let parts = [];
+  if (off.length)  parts.push(`<b>${esc(off.join(", "))}</b> ${off.length>1?"have":"has"} not reported yet, so ${off.length>1?"those cards":"that card"} ${off.length>1?"are":"is"} showing the <b>backtest</b> that earned ${off.length>1?"them":"it"} a place here. Live numbers replace it on the first cycle after the open.`);
+  if (mon.length)  parts.push(`<b>${esc(mon.join(", "))}</b> records the model's score on every candidate but does <b>not</b> let it veto a trade: narrowing that rule made it worse out of sample, so the score is collected as evidence rather than acted on.`);
+  if (sims.length) parts.push(`<b>${esc(sims.join(", "))}</b> has no broker. It replays the session that just closed on licensed CME data and books its own simulated fills, so it is two steps removed from the others: simulated fills, and one session behind.`);
+  document.getElementById("caveats").innerHTML = parts.join(" ") || "All bots reporting.";
+}
+
+function cardHTML(b, r, leaderCount){
+  const on = b.status === "running";
+  const lead = r === 1 && leaderCount > 1;
+  const ret = b.return_pct;
+  const bt = backtests[b.key];
+  const tags = [
+    `<span class="tag status${on?"":" off"}">${esc(b.status||"")}</span>`,
+    b.jev_mode === "gating" ? '<span class="tag gate">jev gates trades</span>' : "",
+    b.jev_mode === "monitor" ? '<span class="tag monitor">jev monitors only</span>' : "",
+    b.fills === "simulated" ? '<span class="tag sim">simulated fills · T+1</span>' : "",
+    (!on && bt) ? '<span class="tag bt">showing backtest</span>' : "",
+  ].join("");
+
+  // Waiting on the open: show what the backtest did, drawn as it goes, and say
+  // plainly that it is a backtest. Never dressed up as live performance.
+  const hero = (!on && bt)
+    ? `<div class="big dim" id="bt-n-${esc(b.key)}">+0.0%</div>
+       <div class="biglabel">backtest return</div>
+       <div class="btline">${esc(bt.period)}${bt.trades?" · "+bt.trades+" trades":""}</div>
+       <svg class="spark" id="bt-s-${esc(b.key)}" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+       ${bt.second?`<div class="btsecond">${esc(bt.second)}</div>`:""}`
+    : `<div class="big ${ret>0?"pos":ret<0?"neg":"dim"}">${on?pct(ret):"—"}</div>
+       <div class="biglabel">${on?"return":"not yet running"}</div>`;
+
+  return `<div class="card${on?"":" off"}${lead?" lead":""}">
+      ${r?`<div class="rank">#${r}</div>`:""}
+      <div class="cagent">agent ${esc(b.agent)}</div>
+      <div class="cname" style="color:${colorOf(b.key)}">${esc(b.label)}</div>
+      <div class="cstrat">${esc(b.strategy)}</div>
+      ${hero}
+      <div class="row"><span>equity</span><b>${money(b.equity)}</b></div>
+      <div class="row"><span>day P&amp;L</span><b class="${b.day_pnl>0?"pos":b.day_pnl<0?"neg":""}">${money(b.day_pnl)}</b></div>
+      <div class="row"><span>open positions</span><b>${b.open_positions_count ?? (b.open_positions||[]).length}</b></div>
+      <div class="row"><span>trades</span><b>${b.trades_total??0}</b></div>
+      <div class="row"><span>win rate</span><b>${b.win_rate==null?"—":b.win_rate.toFixed(0)+"%"}</b></div>
+      <div class="row"><span>broker</span><b style="font-weight:500;font-size:11.5px">${esc(b.broker)}</b></div>
+      <div class="tags">${tags}</div>
+      ${(!on && bt && bt.note)?`<div class="btnote">${bt.note}</div>`:""}
+      ${(!on && bt && bt.caveat)?`<div class="btcav">${esc(bt.caveat)}</div>`:""}
+    </div>`;
+}
+
+// ---------------------------------------------------------------- the animation
+// Draws a bot's real backtest curve left to right and counts the percentage
+// along with it, so the number on screen is always the number that curve had
+// reached at that point. It loops, because it is there to be filmed.
+const DRAW_MS = 5200, HOLD_MS = 2100;
+
+function stopAnim(key){
+  if (anims[key]){ cancelAnimationFrame(anims[key].raf); delete anims[key]; }
+}
+
+function animate(key){
+  const bt = backtests[key];
+  const svg = document.getElementById("bt-s-" + key);
+  const num = document.getElementById("bt-n-" + key);
+  if (!bt || !svg || !num) return;
+
+  const W = 300, H = 64, PAD = 3;
+  const lines = bt.lines.filter(l => l.points && l.points.length > 1);
+  if (!lines.length) return;
+  let lo = Infinity, hi = -Infinity, t0 = Infinity, t1 = -Infinity;
+  lines.forEach(l => l.points.forEach(p => {
+    lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]);
+    t0 = Math.min(t0, p[0]); t1 = Math.max(t1, p[0]);
+  }));
+  const vspan = (hi - lo) || 1, tspan = (t1 - t0) || 1;
+  const X = t => PAD + (t - t0) / tspan * (W - PAD * 2);
+  const Y = v => PAD + (hi - v) / vspan * (H - PAD * 2);
+  const c = colorOf(key);
+  const heroLine = lines.find(l => l.hero) || lines[0];
+  const base = heroLine.points[0][1];
+
+  // A flat reference at the starting equity, so a curve that dips below where
+  // it began is visibly below it rather than just low in the box.
+  const zero = Y(base);
+  svg.innerHTML =
+    `<line x1="${PAD}" y1="${zero.toFixed(1)}" x2="${W-PAD}" y2="${zero.toFixed(1)}"
+       stroke="#e4e4e0" stroke-width="1"/>` +
+    lines.map((l, i) =>
+      `<polyline id="bt-p-${key}-${i}" fill="none" stroke="${l.hero?c:"#c4c8cd"}"
+         stroke-width="${l.hero?2.1:1.4}" stroke-linejoin="round" stroke-linecap="round"
+         ${l.hero?"":'stroke-dasharray="3 2"'} points=""/>`).join("") +
+    `<circle id="bt-d-${key}" r="2.8" fill="${c}" cx="${X(t0).toFixed(1)}" cy="${Y(base).toFixed(1)}"/>`;
+
+  const polys = lines.map((_, i) => document.getElementById(`bt-p-${key}-${i}`));
+  const dot = document.getElementById("bt-d-" + key);
+  const started = performance.now();
+
+  function frame(now){
+    const el = now - started, cycle = DRAW_MS + HOLD_MS;
+    const phase = el % cycle;
+    // ease-out, so it opens fast and settles on the final number
+    const raw = Math.min(1, phase / DRAW_MS);
+    const p = 1 - Math.pow(1 - raw, 2.2);
+    const cutoff = t0 + p * tspan;
+
+    let lastHero = base;
+    lines.forEach((l, i) => {
+      const pts = [];
+      for (const q of l.points){
+        if (q[0] > cutoff) break;
+        pts.push(X(q[0]).toFixed(1) + "," + Y(q[1]).toFixed(1));
+        if (l === heroLine) lastHero = q[1];
+      }
+      if (pts.length) polys[i].setAttribute("points", pts.join(" "));
+    });
+    dot.setAttribute("cx", X(cutoff).toFixed(1));
+    dot.setAttribute("cy", Y(lastHero).toFixed(1));
+
+    const shown = (lastHero / base - 1) * 100;
+    num.textContent = (shown >= 0 ? "+" : "") + shown.toFixed(1) + "%";
+    num.className = "big " + (shown > 0.05 ? "pos" : shown < -0.05 ? "neg" : "dim");
+
+    anims[key] = anims[key] || {};
+    anims[key].raf = requestAnimationFrame(frame);
+  }
+  anims[key] = { raf: requestAnimationFrame(frame) };
+}
+
+// The laptop desk shows whether the deployed one is answering. Checked by our
+// own server rather than from here, so no CORS and no mixed-content surprises.
+// Rendering is split from fetching so it can be driven directly by a test.
+function renderRemote(r){
+  const el = document.getElementById("remote");
+  const txt = document.getElementById("remoteText");
+  if (!r || !r.configured){ el.hidden = true; return; }
+  el.hidden = false;
+  if (r.ok){
+    const bits = [];
+    if (r.bots_running != null && r.bots_expected != null)
+      bits.push(`${r.bots_running}/${r.bots_expected} bots live`);
+    if (r.latency_ms != null) bits.push(`${Math.round(r.latency_ms)}ms`);
+    el.className = "conn remote up";
+    txt.innerHTML = `${esc(r.label || "remote")} connected` +
+      (bits.length ? `<span class="sub2">${esc(bits.join(" · "))}</span>` : "");
+  } else {
+    el.className = "conn remote down";
+    txt.innerHTML = `${esc(r.label || "remote")} unreachable` +
+      (r.error ? `<span class="sub2">${esc(r.error)}</span>` : "");
+  }
+}
+
+async function loadRemote(){
+  try {
+    renderRemote(await (await fetch("api/remote")).json());
+  } catch {
+    // Our own server is unreachable, which the other indicator already says.
+    document.getElementById("remote").hidden = true;
+  }
+}
+
+async function loadBacktests(){
+  try {
+    const d = await (await fetch("backtests.json")).json();
+    backtests = d.bots || {};
+  } catch { backtests = {}; }
+}
+
+function renderChart(){
+  const svg = document.getElementById("chart");
+  const W = 920, H = 300, L = 66, R = 128, T = 14, B = 32;
+  const series = Object.entries(history).filter(([,v]) => v && v.length > 1);
+  if (!series.length){
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" class="ax">no equity history yet</text>`;
+    document.getElementById("legend").innerHTML = "";
+    return;
+  }
+  let lo=Infinity, hi=-Infinity, t0=Infinity, t1=-Infinity;
+  series.forEach(([,pts]) => pts.forEach(p => {
+    const t = new Date(p.ts).getTime();
+    if (!isFinite(t)) return;
+    lo=Math.min(lo,p.equity); hi=Math.max(hi,p.equity); t0=Math.min(t0,t); t1=Math.max(t1,t);
+  }));
+  const span = (hi-lo)||1; lo-=span*.08; hi+=span*.08;
+  const tspan = (t1-t0)||1;
+  const X = t => L + (t-t0)/tspan*(W-L-R);
+  const Y = v => T + (hi-v)/(hi-lo)*(H-T-B);
+  let out = "";
+  [0,.25,.5,.75,1].forEach(f => {
+    const y = T+f*(H-T-B), v = hi-f*(hi-lo);
+    out += `<line x1="${L}" y1="${y.toFixed(1)}" x2="${W-R}" y2="${y.toFixed(1)}" stroke="#e4e4e0"/>`;
+    out += `<text x="${L-8}" y="${(y+4).toFixed(1)}" text-anchor="end" class="ax">${Math.round(v).toLocaleString()}</text>`;
+  });
+  let legend = "";
+  series.forEach(([bot, pts]) => {
+    const c = colorOf(bot);
+    const d = pts.filter(p => isFinite(new Date(p.ts).getTime()))
+                 .map(p => `${X(new Date(p.ts).getTime()).toFixed(1)},${Y(p.equity).toFixed(1)}`).join(" ");
+    out += `<polyline points="${d}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    const last = pts[pts.length-1];
+    out += `<text x="${W-R+7}" y="${(Y(last.equity)+4).toFixed(1)}" class="ax" fill="${c}" style="font-weight:700">${bot} ${money(last.equity)}</text>`;
+    legend += `<span class="key"><i style="background:${c}"></i>${esc(bot)}</span>`;
+  });
+  [t0, t0+tspan/2, t1].forEach(t => {
+    out += `<text x="${X(t).toFixed(1)}" y="${H-10}" text-anchor="middle" class="ax">${new Date(t).toLocaleDateString()}</text>`;
+  });
+  svg.innerHTML = out;
+  document.getElementById("legend").innerHTML = legend;
+}
+
+// Append rather than re-render: the feed must not flicker or jump the scroll
+// position while someone is reading it, which is the one thing a framework
+// would have handled for free.
+function addEvent(e, prepend=true){
+  // EventSource reconnects by itself and the server replays its recent tail on
+  // every connect, so without this a dropped wifi link duplicates the feed.
+  if (e.uid){
+    if (seen.has(e.uid)) return;
+    seen.add(e.uid);
+    if (seen.size > 4000) seen = new Set(Array.from(seen).slice(-2000));
+  }
+  const feed = document.getElementById("feed");
+  const placeholder = feed.querySelector(".empty");
+  if (placeholder) placeholder.remove();
+  const color = colorOf(e.bot);
+  let detail = "";
+  if (e.kind === "fill" || e.kind === "order")
+    detail = `${esc(e.side||"")} ${e.contracts||e.qty||""} ${e.notional?money(e.notional):""} ${e.price?"@ "+e.price:""} ${e.R!=null?`<b class="${e.R>0?"pos":"neg"}">${e.R>0?"+":""}${(+e.R).toFixed(2)}R</b>`:""} ${e.net_pnl!=null?`<b class="${e.net_pnl>0?"pos":"neg"}">${money(e.net_pnl)}</b>`:""}`;
+  else if (e.kind === "exit") detail = `closed after ${e.sessions_held??""} sessions`;
+  else if (e.kind === "error") detail = esc(e.error||"").slice(0,140);
+  else if (e.kind === "heartbeat") detail = `<span class="dim">${esc(e.status||"alive")}${e.equity?" · "+money(e.equity):""}</span>`;
+  else detail = esc(e.note || e.action || "");
+  let probs = "";
+  const p = e.probabilities || (e.jev && e.jev.prob);
+  if (p && Object.keys(p).length){
+    probs = '<div class="probs">' + Object.entries(p).sort((a,b)=>b[1]-a[1]).map(([k,v]) =>
+      `<div class="pr"><span class="pl">${esc(k)}</span><span class="pb"><i style="width:${Math.max(1,v*100).toFixed(0)}%;background:${k.startsWith("enter")?"#2f855a":"#b9bdc3"}"></i></span><span class="pv">${Math.round(v*100)}%</span></div>`
+    ).join("") + '</div>';
+  }
+  const div = document.createElement("div");
+  div.className = "ev";
+  div.innerHTML = `<span class="t">${clockOf(e.ts)}</span>
+    <span class="b" style="color:${color}">${esc(e.bot)}</span>
+    <span class="kind ${esc(e.kind)}">${esc(e.kind)}</span>
+    <span>${e.symbol?`<b>${esc(e.symbol)}</b> `:""}${detail}${probs}</span>`;
+  if (prepend) feed.prepend(div); else feed.append(div);
+  while (feed.children.length > MAX_EVENTS) feed.lastChild.remove();
+}
+
+async function loadHistory(){
+  try {
+    const d = await (await fetch("/api/history")).json();
+    const next = {};
+    Object.entries(d.bots || {}).forEach(([k, v]) => {
+      if (v && v.accent) accent[k] = v.accent;
+      next[k] = v && v.points || [];
+    });
+    history = next;
+    renderChart();
+  } catch {}
+}
+
+function connect(){
+  const es = new EventSource("/api/stream");
+  es.addEventListener("open", () => setConn(true, "live"));
+  es.addEventListener("state", m => { try { renderCards(JSON.parse(m.data)); } catch {} });
+  es.addEventListener("event", m => { try { addEvent(JSON.parse(m.data)); } catch {} });
+  es.addEventListener("error", () => setConn(false, "reconnecting"));
+}
+
+// Backtests first: the cards need them to decide what to show for a bot that
+// has not reported, and without them a waiting card would flash an empty hero.
+loadBacktests()
+  .then(() => fetch("/api/state").then(r => r.json()).then(renderCards))
+  .catch(() => setConn(false, "server down"))
+  .finally(() => { loadHistory(); connect(); loadRemote(); });
+setInterval(loadHistory, 30000);
+setInterval(loadRemote, 15000);
+</script>

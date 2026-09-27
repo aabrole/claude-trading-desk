@@ -1,0 +1,109 @@
+# Four bots, a dashboard, a keepalive, one state volume. Built for Oracle Cloud
+# Always Free (Ampere A1, ARM64, 2 OCPU / 12 GB).
+#
+#   docker compose --env-file .env up -d --build
+#   docker compose logs -f orb
+#   open http://<vm-public-ip>:8080        the scoreboard
+#   docker compose down
+#
+# Each Alpaca bot gets its own paper account so the leaderboard is real. One
+# paper account per Alpaca login, so that means three signups. The lvl bot needs
+# no broker: it reads live CME data from Databento and simulates its own fills.
+
+x-bot: &bot
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  restart: unless-stopped
+  volumes:
+    - state:/app/state
+    - cache:/app/cache
+  environment: &bot-env
+    TZ: America/New_York
+    BOT_STATE_DIR: /app/state
+    TYPESAFE_API_KEY: ${TYPESAFE_API_KEY}
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  orb:                       # agent 1: opening range breakout, filtered by Jev
+    <<: *bot
+    container_name: orb
+    environment:
+      <<: *bot-env
+      BOT: orb
+      ALPACA_PAPER_KEY: ${ORB_ALPACA_KEY}
+      ALPACA_PAPER_SECRET: ${ORB_ALPACA_SECRET}
+      BOT_NAME: orb
+      BOT_LABEL: ORB breakout
+    command: ["--decider", "jev", "--jev-threshold", "0.30"]
+
+  insider:                   # agent 3c: corporate insider purchases
+    <<: *bot
+    container_name: insider
+    environment:
+      <<: *bot-env
+      BOT: insider
+      ALPACA_PAPER_KEY: ${INSIDER_ALPACA_KEY}
+      ALPACA_PAPER_SECRET: ${INSIDER_ALPACA_SECRET}
+      BOT_NAME: insider
+      BOT_LABEL: Insider filings
+    command: ["--hold", "5", "--slots", "10"]
+
+  pead:                       # agent 3b: post-earnings drift, SPY-hedged
+    <<: *bot
+    container_name: pead
+    environment:
+      <<: *bot-env
+      BOT: pead
+      ALPACA_PAPER_KEY: ${PEAD_ALPACA_KEY}
+      ALPACA_PAPER_SECRET: ${PEAD_ALPACA_SECRET}
+      BOT_NAME: pead
+      BOT_LABEL: Earnings drift
+    # No strategy flags: live_pead.py holds gap >= 5% and a 10-session hold in
+    # its own LOCKED dict, and defines no arguments to override them.
+    command: []
+
+  lvl:                       # agent 2: overnight index futures, Databento live data,
+    <<: *bot                 #          self-simulated fills, no broker
+    container_name: lvl
+    environment:
+      <<: *bot-env
+      BOT: lvl
+      BOT_NAME: lvl
+      BOT_LABEL: Overnight futures
+      DATABENTO_API_KEY: ${DATABENTO_API_KEY}
+    command: ["--blocks", "0", "--min-confirm", "1"]
+
+  dashboard:                 # the public scoreboard: reads the state volume, trades nothing
+    build:
+      context: ..
+      dockerfile: dashboard/Dockerfile
+    container_name: dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Read-only on purpose. The dashboard is a reader, and a bug in it must
+      # not be able to corrupt the state the bots are writing.
+      - state:/app/state:ro
+    environment:
+      TZ: America/New_York
+      BOT_STATE_DIR: /app/state
+      DASHBOARD_PORT: "8080"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  keepalive:                 # stops Oracle reclaiming an idle Always Free VM
+    <<: *bot
+    container_name: keepalive
+    environment:
+      <<: *bot-env
+      BOT: keepalive
+      KEEPALIVE_TARGET_PCT: "8"
+
+volumes:
+  state:
+  cache:

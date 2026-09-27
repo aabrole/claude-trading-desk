@@ -1,0 +1,23 @@
+# secrets, never
+.env
+*.env
+!.env.example
+*-provision.env
+*.pem
+*.key
+
+# data and run output
+cache/
+**/cache/
+**/out/
+state/
+*.pkl
+*.parquet
+**/backtests.json
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store

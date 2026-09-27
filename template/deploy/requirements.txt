@@ -1,0 +1,6 @@
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+alpaca-py>=0.33
+yfinance>=0.2
+databento>=0.34        # lvl reads live CME data; it is the only bot that needs this
