@@ -396,7 +396,21 @@ function addEvent(e, prepend=true){
   let detail = "";
   if (e.kind === "fill" || e.kind === "order")
     detail = `${esc(e.side||"")} ${e.contracts||e.qty||""} ${e.notional?money(e.notional):""} ${e.price?"@ "+e.price:""} ${e.R!=null?`<b class="${e.R>0?"pos":"neg"}">${e.R>0?"+":""}${(+e.R).toFixed(2)}R</b>`:""} ${e.net_pnl!=null?`<b class="${e.net_pnl>0?"pos":"neg"}">${money(e.net_pnl)}</b>`:""}`;
-  else if (e.kind === "exit") detail = `closed after ${e.sessions_held??""} sessions`;
+  else if (e.kind === "exit"){
+    // An exit's R and P&L are the whole point of the row, and the old version
+    // dropped both. It also assumed a multi-session hold, so an intraday bot
+    // rendered "closed after  sessions" with an empty count.
+    const held = e.sessions_held != null ? `${e.sessions_held} sessions`
+               : e.hold_minutes  != null ? `${Math.round(e.hold_minutes)} min`
+               : e.holding_days  != null ? `${e.holding_days} days` : "";
+    detail = [
+      e.reason ? `<b>${esc(e.reason)}</b>` : "closed",
+      e.price != null ? `@ ${e.price}` : "",
+      held ? `after ${held}` : "",
+      e.R != null ? `<b class="${e.R>0?"pos":"neg"}">${e.R>0?"+":""}${(+e.R).toFixed(2)}R</b>` : "",
+      e.net_pnl != null ? `<b class="${e.net_pnl>0?"pos":"neg"}">${money(e.net_pnl)}</b>` : ""
+    ].filter(Boolean).join(" ");
+  }
   else if (e.kind === "error") detail = esc(e.error||"").slice(0,140);
   else if (e.kind === "heartbeat") detail = `<span class="dim">${esc(e.status||"alive")}${e.equity?" · "+money(e.equity):""}</span>`;
   else detail = esc(e.note || e.action || "");
