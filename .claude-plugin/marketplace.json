@@ -1,6 +1,8 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "trading-desk",
   "version": "1.0.0",
+  "description": "Tooling for building and honestly testing algorithmic trading strategies with Claude Code.",
   "owner": {
     "name": "aabrole",
     "url": "https://github.com/aabrole"
@@ -9,8 +11,14 @@
     {
       "name": "trading-desk",
       "version": "1.0.0",
-      "description": "Build, honestly backtest, paper trade and self-host algorithmic trading bots with Claude Code, with a free live dashboard and free 24/7 hosting.",
-      "source": "./"
+      "description": "Build, honestly backtest, paper trade and self-host algorithmic trading bots. Three-arm testing that can tell you a strategy does not work, a live dashboard, and scripted deployment to a free 24/7 VM.",
+      "author": {
+        "name": "aabrole"
+      },
+      "homepage": "https://github.com/aabrole/claude-trading-desk",
+      "repository": "https://github.com/aabrole/claude-trading-desk",
+      "source": "./plugins/trading-desk",
+      "category": "productivity"
     }
   ]
 }
